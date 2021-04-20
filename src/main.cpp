@@ -3,6 +3,8 @@
 #include <cstring>
 #include "mmu.h"
 #include "pagetable.h"
+#include <sstream>
+#include <vector>
 
 void printStartMessage(int page_size);
 void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table);
@@ -37,8 +39,53 @@ int main(int argc, char **argv)
     std::cout << "> ";
     std::getline (std::cin, command);
     while (command != "exit") {
-        // Handle command
-        // TODO: implement this!
+
+        std::string delimeter = " ";
+        size_t pos = 0;
+        std::string token;
+        std::vector<std::string> cmd_line;
+
+        while ((pos = command.find(delimeter)) != std::string::npos) {
+            token = command.substr(0, pos);
+            cmd_line.push_back(token);
+            command.erase(0, pos + delimeter.length());
+        }
+        cmd_line.push_back(command);
+
+        if (cmd_line[0] == "create") {
+            createProcess(stoi(cmd_line[1]), stoi(cmd_line[2]), mmu, page_table);
+        }else if (cmd_line[0] == "allocate") {
+            //FreeSpace, Char, Short, Int, Float, Long, Double 
+            DataType type;
+            if (cmd_line[3] == "freespace") {
+                type = FreeSpace;
+            }else if (cmd_line[3] == "short") {
+                type = Short;
+            }else if (cmd_line[3] == "char") {
+                type = Char;
+            }else if (cmd_line[3] == "float") {
+                type = Float;
+            }else if (cmd_line[3] == "long") {
+                type = Long;
+            }else if (cmd_line[3] == "double") {
+                type = Double;
+            }else if (cmd_line[3] == "int") {
+                type = Int;
+            }else {
+                std::cout << "Error: DataType: " << cmd_line[3] << " invalid." << std::endl;
+            }
+            allocateVariable(stoi(cmd_line[1]), cmd_line[2], type, stoi(cmd_line[4]), mmu, page_table);
+        }else if (cmd_line[0] == "set") {
+            setVariable(stoi(cmd_line[1]), cmd_line[2], stoi(cmd_line[3]), &cmd_line, mmu, page_table, memory);
+        }else if (cmd_line[0] == "free") {
+            freeVariable(stoi(cmd_line[1]), cmd_line[2], mmu, page_table);  
+        }else if (cmd_line[0] == "terminate") {
+           terminateProcess(stoi(cmd_line[1]), mmu, page_table);
+        }else if (cmd_line[0] == "print"){
+            //print
+        }else {
+            std::cout << "Error: Command: " << cmd_line[0] << " invalid." << std::endl;
+        }
 
         // Get next command
         std::cout << "> ";
