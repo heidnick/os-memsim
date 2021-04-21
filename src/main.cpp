@@ -82,7 +82,10 @@ int main(int argc, char **argv)
         }else if (cmd_line[0] == "terminate") {
            terminateProcess(stoi(cmd_line[1]), mmu, page_table);
         }else if (cmd_line[0] == "print"){
-            //print
+            if(cmd_line[1] == "page")
+            {
+                page_table->print();
+            }
         }else {
             std::cout << "Error: Command: " << cmd_line[0] << " invalid." << std::endl;
         }
@@ -92,7 +95,7 @@ int main(int argc, char **argv)
         std::getline (std::cin, command);
     }
 
-    // Cean up
+    // Clean up
     free(memory);
     delete mmu;
     delete page_table;
@@ -121,8 +124,13 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
 {
     // TODO: implement this!
     //   - create new process in the MMU
+    uint32_t pid = mmu->createProcess();
     //   - allocate new variables for the <TEXT>, <GLOBALS>, and <STACK>
+    allocateVariable(pid, "<TEXT>", Char, text_size, mmu, page_table);
+    allocateVariable(pid, "<GLOBALS>", Char, data_size, mmu, page_table);
+    allocateVariable(pid, "<STACK>", Char, 65536, mmu, page_table);
     //   - print pid
+    std::cout << pid << std::endl;
 }
 
 void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table)

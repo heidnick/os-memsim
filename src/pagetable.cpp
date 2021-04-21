@@ -42,6 +42,10 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
     int page_number = 0;
     int page_offset = 0;
 
+    page_offset = virtual_address % _page_size; 
+    page_number = (virtual_address - page_offset) / _page_size;
+
+
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
     
@@ -50,6 +54,7 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
     if (_table.count(entry) > 0)
     {
         // TODO: implement this!
+        address = entry.at(page_number) + page_offset;
     }
 
     return address;
@@ -67,5 +72,11 @@ void PageTable::print()
     for (i = 0; i < keys.size(); i++)
     {
         // TODO: print all pages
+        std::string currkey = keys[i];
+        std::size_t index = currkey.find("|");
+        std::string currpid = currkey.substr(0, index);
+        std::string currframe = currkey.substr(index+1, currkey.size());
+        std::cout << currpid << " |       " << currframe << " |       " << _table[keys[i]] << std::endl;
+        //printf("%.14s | %.14s | %.13s", currpid, currframe, _table[keys[i]]);
     }
 }
