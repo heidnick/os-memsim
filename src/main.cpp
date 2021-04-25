@@ -8,7 +8,7 @@
 
 void printStartMessage(int page_size);
 void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table);
-void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table);
+void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table, bool createCalled);
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory);
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table);
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
             }else {
                 std::cout << "Error: DataType: " << cmd_line[3] << " invalid." << std::endl;
             }
-            allocateVariable(stoi(cmd_line[1]), cmd_line[2], type, stoi(cmd_line[4]), mmu, page_table);
+            allocateVariable(stoi(cmd_line[1]), cmd_line[2], type, stoi(cmd_line[4]), mmu, page_table, false);
         }else if (cmd_line[0] == "set") {
             setVariable(stoi(cmd_line[1]), cmd_line[2], stoi(cmd_line[3]), &cmd_line, mmu, page_table, memory);
         }else if (cmd_line[0] == "free") {
@@ -126,17 +126,54 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
     //   - create new process in the MMU
     uint32_t pid = mmu->createProcess();
     //   - allocate new variables for the <TEXT>, <GLOBALS>, and <STACK>
-    allocateVariable(pid, "<TEXT>", Char, text_size, mmu, page_table);
-    allocateVariable(pid, "<GLOBALS>", Char, data_size, mmu, page_table);
-    allocateVariable(pid, "<STACK>", Char, 65536, mmu, page_table);
+    allocateVariable(pid, "<TEXT>", Char, text_size, mmu, page_table, true);
+    allocateVariable(pid, "<GLOBALS>", Char, data_size, mmu, page_table, true);
+    allocateVariable(pid, "<STACK>", Char, 65536, mmu, page_table, true);
     //   - print pid
     std::cout << pid << std::endl;
 }
 
-void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table)
+void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table, bool createCalled)
 {
+    //page_table->addEntry(1024, 9);
+
     // TODO: implement this!
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
+    Process *proc = mmu->getProcess(pid);
+
+    /*for (int i=0; i<page_table.size(); i++) {
+        if (page_table[i]->)
+    }*/
+
+    for (int i=0; i<proc->variables.size(); i++) {
+        if (proc->variables[i]->type == FreeSpace) {
+            int size = num_elements;
+            if (type == Short) {
+                size = size * 2;
+            }else if (type == Int || type == Float) {
+                size = size * 4;
+            }else if (type == Long || type == Double) {
+                size = size * 8;
+            }
+            //std::cout << "size: " << size << std::endl;
+            if (proc->variables[i]->size >= size) {
+                
+                //size is dependent on type
+                int current_vadd = proc->variables[i]->virtual_address;
+                mmu->addVariableToProcess(pid, var_name, type, size, proc->variables[i]->virtual_address);
+                int new_size = proc->variables[i]->size - size;
+                if (new_size == 0) {
+                    mmu->deleteFreeSpace(pid, proc->variables[i]->name, proc->variables[i]->virtual_address);
+                }else {
+                    mmu->modifyVariableToProcess(pid, proc->variables[i]->name, new_size, proc->variables[i]->virtual_address + size);
+                }
+                if (!createCalled) {
+                    std::cout << current_vadd << std::endl;
+                }
+            }
+        }
+    }
+    
     //   - if no hole is large enough, allocate new page(s)
     //   - insert variable into MMU
     //   - print virtual memory address
