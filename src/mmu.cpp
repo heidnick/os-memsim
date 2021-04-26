@@ -51,6 +51,42 @@ void Mmu::addVariableToProcess(uint32_t pid, std::string var_name, DataType type
     }
 }
 
+void Mmu::modifyVariableToProcess(uint32_t pid, std::string var_name, uint32_t new_size, uint32_t new_address) {
+    int i;
+    Process *proc = NULL;
+    for (i = 0; i < _processes.size(); i++)
+    {
+        if (_processes[i]->pid == pid)
+        {
+            proc = _processes[i];
+        }
+    }
+    for (i=0; i<proc->variables.size(); i++) {
+        if (proc->variables[i]->name == var_name) {
+            proc->variables[i]->size = new_size;
+            proc->variables[i]->virtual_address = new_address;
+        }
+    }
+}
+
+void Mmu::deleteFreeSpace(uint32_t pid, std::string var_name, uint32_t address) {
+    int i;
+    Process *proc = NULL;
+    for (i = 0; i < _processes.size(); i++)
+    {
+        if (_processes[i]->pid == pid)
+        {
+            proc = _processes[i];
+        }
+    }
+    for (i=0; i<proc->variables.size(); i++) {
+        if (proc->variables[i]->name == var_name && proc->variables[i]->size == address) {
+            proc->variables.erase(proc->variables.begin() + i);
+        }
+    }
+}
+
+
 void Mmu::print()
 {
     int i, j;
@@ -64,4 +100,17 @@ void Mmu::print()
             // TODO: print all variables (excluding <FREE_SPACE> entries)
         }
     }
+}
+
+Process* Mmu::getProcess(uint32_t pid) {
+    int i;
+    for (i = 0; i < _processes.size(); i++)
+    {
+        if (_processes[i]->pid == pid)
+        {
+            return _processes[i];
+        }
+    }
+    return NULL;
+    //return _processes[];
 }

@@ -32,6 +32,7 @@ void PageTable::addEntry(uint32_t pid, int page_number)
     int frame = 0; 
     // Find free frame
     // TODO: implement this!
+<<<<<<< HEAD
     /*
     //not working, just a thought if other idea doesn't work
     bool found = false;
@@ -50,6 +51,20 @@ void PageTable::addEntry(uint32_t pid, int page_number)
         if(found)
         {
             frame = i;
+=======
+    std::map<std::string, int>::iterator it;
+    bool num_list[67108864/_page_size];
+    for (it = _table.begin(); it != _table.end(); it++)
+    {
+        num_list[it->second] = true;
+    }
+    int i=0;
+    bool done = false;
+    while (!done){
+        if (!num_list[i]) {
+            frame = i;
+            done = true;
+>>>>>>> 65fdd837a1aed2eb35e0bffbcbe4cb88ab14178c
         }
         i++;
     }
