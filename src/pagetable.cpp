@@ -32,7 +32,29 @@ void PageTable::addEntry(uint32_t pid, int page_number)
     int frame = 0; 
     // Find free frame
     // TODO: implement this!
+    /*
+    //not working, just a thought if other idea doesn't work
+    bool found = false;
+    int i = 0;
+    while(!found)
+    {
+        std::map<std::string, int>::iterator it;
+        for(it = _table.begin(); it != _table.end(); it++)
+        {
+            if(it->second == i);
+            {
+                found = true;
+            }
+
+        }
+        if(found)
+        {
+            frame = i;
+        }
+        i++;
+    }
     _table[entry] = frame;
+    */
 }
 
 int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
