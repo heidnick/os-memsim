@@ -46,28 +46,25 @@ void Mmu::addVariableToProcess(uint32_t pid, std::string var_name, DataType type
     var->type = type;
     var->virtual_address = address;
     var->size = size;
+
     if (proc != NULL)
     {
-        proc->variables.push_back(var);
+        int pos;
+        for(int i = 0; i < proc->variables.size(); i++)
+        {
+            if(proc->variables[i]->virtual_address == var->virtual_address)
+            {
+                pos = i;
+            }
+        }
+        proc->variables.insert(proc->variables.begin() + pos, var);
     }
 }
 
-void Mmu::modifyVariableToProcess(uint32_t pid, std::string var_name, uint32_t new_size, uint32_t new_address) {
-    int i;
-    Process *proc = NULL;
-    for (i = 0; i < _processes.size(); i++)
-    {
-        if (_processes[i]->pid == pid)
-        {
-            proc = _processes[i];
-        }
-    }
-    for (i=0; i<proc->variables.size(); i++) {
-        if (proc->variables[i]->name == var_name) {
-            proc->variables[i]->size = new_size;
-            proc->variables[i]->virtual_address = new_address;
-        }
-    }
+void Mmu::modifyVariableToProcess(Variable *var, uint32_t new_size, uint32_t new_address) {
+    var->size = new_size;
+    var->virtual_address = new_address;
+
 }
 
 void Mmu::deleteFreeSpace(uint32_t pid, std::string var_name, uint32_t address) {
@@ -99,7 +96,7 @@ void Mmu::print()
         for (j = 0; j < _processes[i]->variables.size(); j++)
         {
             if (_processes[i]->variables[j]->type != FreeSpace) {
-                std::cout << _processes[i]->pid << " |  " << _processes[i]->variables[j]->name << " | " << std::hex << _processes[i]->variables[j]->virtual_address << " |  " << _processes[i]->variables[j]->size<< std::endl;
+                std::cout << _processes[i]->pid << " |  " << _processes[i]->variables[j]->name << " | " << _processes[i]->variables[j]->virtual_address << " |  " << _processes[i]->variables[j]->size<< std::endl;
             }
         }
     }

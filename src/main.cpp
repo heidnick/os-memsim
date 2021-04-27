@@ -148,46 +148,67 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
     }*/
     //std::vector<std::string> keys = page_table->sortedKeys();
     int size = num_elements;
+    int type_size = 1;
     if (type == Short) {
-        size = size * 2;
+        type_size = 2;
     }else if (type == Int || type == Float) {
-        size = size * 4;
+        type_size = 4;
     }else if (type == Long || type == Double) {
-        size = size * 8;
+        type_size = 8;
     }
+    size = size * type_size;
 
-    for (int i=0; i<proc->variables.size(); i++) {
+    int variable_size = proc->variables.size();
+    for (int i=0; i<variable_size; i++) {
         if (proc->variables[i]->type == FreeSpace) {
+            int current_vadd = proc->variables[i]->virtual_address;
+            int offset = (type_size -  (current_vadd % type_size)) % type_size;
+            //if there would be cross page conflicts
+            if( size + (current_vadd % page_table->getPageSize()) > page_table->getPageSize() && offset != 0)
+            {
+                //increase the size, then check if the free space can still handle the offset
+                size = size + offset;
+                if(proc->variables[i]->size >= size)
+                {
+                    mmu->addVariableToProcess(pid, "<FREE_SPACE>", FreeSpace, offset, current_vadd);
+                    current_vadd = current_vadd + offset;
+                    mmu->modifyVariableToProcess(proc->variables[i+1], proc->variables[i+1]->size - offset, current_vadd);          
+                    i = i + 1;
+                    
+                }
+            }
             if (proc->variables[i]->size >= size) {
                 //size is dependent on type
-                int current_vadd = proc->variables[i]->virtual_address;
+                size = size - offset;
                 int starting_page = (int)current_vadd/page_table->getPageSize();
                 int ending_page = (int)(current_vadd + size - 1) / page_table->getPageSize();
                 mmu->addVariableToProcess(pid, var_name, type, size, current_vadd);
 
                 if (current_vadd == 0) {
-                    for (int i=starting_page; i<ending_page + 1; i++) {
-                        page_table->addEntry(pid, i);
+                    for (int j = starting_page; j<ending_page + 1; j++) {
+                        page_table->addEntry(pid, j);
                     }
                 }else {
                     if (current_vadd % page_table->getPageSize() != 0) {
                         starting_page++;
                     }
-                    for (int i=starting_page; i<ending_page + 1; i++) {
-                        page_table->addEntry(pid, i);
+                    for (int j = starting_page; j<ending_page + 1; j++) {
+                        page_table->addEntry(pid, j);
                     }
                 }
-                
-                int new_size = proc->variables[i]->size - size;
+
+                int new_size = proc->variables[i+1]->size - size;
                 if (new_size == 0) {
-                    mmu->deleteFreeSpace(pid, proc->variables[i]->name, current_vadd);
+                    mmu->deleteFreeSpace(pid, proc->variables[i+1]->name, current_vadd);
                 }else {
-                    mmu->modifyVariableToProcess(pid, proc->variables[i]->name, new_size, current_vadd + size);
+                    mmu->modifyVariableToProcess( proc->variables[i+1], new_size, current_vadd + size);
                 }
                 if (!createCalled) {
                     std::cout << current_vadd << std::endl;
                 }
             }
+            //in case the free space wasnt enough to fit the variable when additional offset was needed, reset to original size
+            size = size - offset;
         }
     }
     

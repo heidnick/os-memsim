@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 enum DataType : uint8_t {FreeSpace, Char, Short, Int, Float, Long, Double};
 
@@ -31,10 +32,12 @@ public:
 
     uint32_t createProcess();
     void addVariableToProcess(uint32_t pid, std::string var_name, DataType type, uint32_t size, uint32_t address);
-    void modifyVariableToProcess(uint32_t pid, std::string var_name, uint32_t new_size, uint32_t new_address);
+    void modifyVariableToProcess(Variable *var, uint32_t new_size, uint32_t new_address);
     void deleteFreeSpace(uint32_t pid, std::string var_name, uint32_t address);
     void print();
     Process* getProcess(uint32_t pid);
+    void sortVariables(Process *proc);
 };
+
 
 #endif // __MMU_H_

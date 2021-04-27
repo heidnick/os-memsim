@@ -26,33 +26,13 @@ std::vector<std::string> PageTable::sortedKeys()
 
 void PageTable::addEntry(uint32_t pid, int page_number)
 {
-    std::cout<< "page num: " << page_number << std::endl;
+    //std::cout<< "page num: " << page_number << std::endl;
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
 
     int frame = 0; 
     // Find free frame
     // TODO: implement this!
-<<<<<<< HEAD
-    /*
-    //not working, just a thought if other idea doesn't work
-    bool found = false;
-    int i = 0;
-    while(!found)
-    {
-        std::map<std::string, int>::iterator it;
-        for(it = _table.begin(); it != _table.end(); it++)
-        {
-            if(it->second == i);
-            {
-                found = true;
-            }
-
-        }
-        if(found)
-        {
-            frame = i;
-=======
     std::map<std::string, int>::iterator it;
     bool num_list[67108864/_page_size];
     for (it = _table.begin(); it != _table.end(); it++)
@@ -65,12 +45,11 @@ void PageTable::addEntry(uint32_t pid, int page_number)
         if (!num_list[i]) {
             frame = i;
             done = true;
->>>>>>> 65fdd837a1aed2eb35e0bffbcbe4cb88ab14178c
         }
         i++;
     }
     _table[entry] = frame;
-    */
+    
 }
 
 int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
