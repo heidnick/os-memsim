@@ -35,6 +35,9 @@ public:
 
     void addEntry(uint32_t pid, int page_number);
     int getPhysicalAddress(uint32_t pid, uint32_t virtual_address);
+    int getPageSize();
+    std::map<std::string, int> getPageTable();
+    std::vector<std::string> getSortedKeys();
     void print();
 };
 

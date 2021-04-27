@@ -1,4 +1,5 @@
 #include "mmu.h"
+#include <iomanip>
 
 Mmu::Mmu(int memory_size)
 {
@@ -97,7 +98,9 @@ void Mmu::print()
     {
         for (j = 0; j < _processes[i]->variables.size(); j++)
         {
-            // TODO: print all variables (excluding <FREE_SPACE> entries)
+            if (_processes[i]->variables[j]->type != FreeSpace) {
+                std::cout << _processes[i]->pid << " |  " << _processes[i]->variables[j]->name << " | " << std::hex << _processes[i]->variables[j]->virtual_address << " |  " << _processes[i]->variables[j]->size<< std::endl;
+            }
         }
     }
 }

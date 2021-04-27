@@ -86,6 +86,9 @@ int main(int argc, char **argv)
             {
                 page_table->print();
             }
+            else if(cmd_line[1] == "mmu") {
+                mmu->print();
+            }
         }else {
             std::cout << "Error: Command: " << cmd_line[0] << " invalid." << std::endl;
         }
@@ -135,37 +138,51 @@ void createProcess(int text_size, int data_size, Mmu *mmu, PageTable *page_table
 
 void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_t num_elements, Mmu *mmu, PageTable *page_table, bool createCalled)
 {
-    //page_table->addEntry(1024, 9);
 
     // TODO: implement this!
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
     Process *proc = mmu->getProcess(pid);
-
-    /*for (int i=0; i<page_table.size(); i++) {
-        if (page_table[i]->)
+    /*::map<std::string, int> p_table = page_table->getPageTable();
+    for (int i=0; i<p_table.size(); i++) {
+        if (p_table[i])
     }*/
+    //std::vector<std::string> keys = page_table->sortedKeys();
+    int size = num_elements;
+    if (type == Short) {
+        size = size * 2;
+    }else if (type == Int || type == Float) {
+        size = size * 4;
+    }else if (type == Long || type == Double) {
+        size = size * 8;
+    }
 
     for (int i=0; i<proc->variables.size(); i++) {
         if (proc->variables[i]->type == FreeSpace) {
-            int size = num_elements;
-            if (type == Short) {
-                size = size * 2;
-            }else if (type == Int || type == Float) {
-                size = size * 4;
-            }else if (type == Long || type == Double) {
-                size = size * 8;
-            }
-            //std::cout << "size: " << size << std::endl;
             if (proc->variables[i]->size >= size) {
-                
                 //size is dependent on type
                 int current_vadd = proc->variables[i]->virtual_address;
-                mmu->addVariableToProcess(pid, var_name, type, size, proc->variables[i]->virtual_address);
+                int starting_page = (int)current_vadd/page_table->getPageSize();
+                int ending_page = (int)(current_vadd + size - 1) / page_table->getPageSize();
+                mmu->addVariableToProcess(pid, var_name, type, size, current_vadd);
+
+                if (current_vadd == 0) {
+                    for (int i=starting_page; i<ending_page + 1; i++) {
+                        page_table->addEntry(pid, i);
+                    }
+                }else {
+                    if (current_vadd % page_table->getPageSize() != 0) {
+                        starting_page++;
+                    }
+                    for (int i=starting_page; i<ending_page + 1; i++) {
+                        page_table->addEntry(pid, i);
+                    }
+                }
+                
                 int new_size = proc->variables[i]->size - size;
                 if (new_size == 0) {
-                    mmu->deleteFreeSpace(pid, proc->variables[i]->name, proc->variables[i]->virtual_address);
+                    mmu->deleteFreeSpace(pid, proc->variables[i]->name, current_vadd);
                 }else {
-                    mmu->modifyVariableToProcess(pid, proc->variables[i]->name, new_size, proc->variables[i]->virtual_address + size);
+                    mmu->modifyVariableToProcess(pid, proc->variables[i]->name, new_size, current_vadd + size);
                 }
                 if (!createCalled) {
                     std::cout << current_vadd << std::endl;
@@ -186,6 +203,23 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
     //   - insert `value` into `memory` at physical address
     //   * note: this function only handles a single element (i.e. you'll need to call this within a loop when setting
     //           multiple elements of an array)
+    Process *proc = mmu->getProcess(pid);
+    bool found = 0;
+    int physical_address;
+    int size = 0;
+    
+    for (int i=0; i<proc->variables.size(); i++) {
+        if (var_name == proc->variables[i]->name) {
+            physical_address = page_table->getPhysicalAddress(pid, proc->variables[i]->virtual_address + offset);
+            //size = 
+            found = 1;
+        }
+    }
+    if (!found) {
+        std::cout << "error: variable not found";
+    }else {
+        //memcpy(((void*)(memory)) + offset* , new_value, a->elm_size);
+    }
 }
 
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table)

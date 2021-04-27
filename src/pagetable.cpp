@@ -26,6 +26,7 @@ std::vector<std::string> PageTable::sortedKeys()
 
 void PageTable::addEntry(uint32_t pid, int page_number)
 {
+    std::cout<< "page num: " << page_number << std::endl;
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
 
@@ -96,6 +97,19 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
 
     return address;
 }
+
+int PageTable::getPageSize() {
+    return _page_size;
+}
+
+std::map<std::string, int> PageTable::getPageTable() {
+    return _table;
+}
+
+std::vector<std::string> PageTable::getSortedKeys() {
+    return sortedKeys();
+}
+
 
 void PageTable::print()
 {
