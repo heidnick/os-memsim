@@ -131,4 +131,24 @@ void Mmu::deleteProcess(uint32_t pid) {
     }
 }
 
+void Mmu::deleteVariable(uint32_t pid, std::string var_name) {
+    bool pid_found, var_found = 0;
+    for (int i=0; i<_processes.size(); i++) {
+        if (_processes[i]->pid == pid) {
+            pid_found = 1;
+            for (int j=0; j<_processes[i]->variables.size(); j++) {
+                if (_processes[i]->variables[j]->name == var_name) {
+                    var_found = 1;
+                    _processes[i]->variables.erase(_processes[i]->variables.begin() + j);
+                }
+            }
+        }
+    }
+    if (!pid_found) {
+        std::cout << "error: process not found" << std::endl;
+    }else if (!var_found) {
+        std::cout << "error: variable not found" << std::endl;
+    }
+}
+
 

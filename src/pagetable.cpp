@@ -70,7 +70,11 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
     if (_table.count(entry) > 0)
     {
         // TODO: implement this!
+<<<<<<< HEAD
         address = _table.at(entry)*_page_size + page_offset;
+=======
+        address = _table.at(entry) * _page_size + page_offset;
+>>>>>>> 2750e9c922061c1e33633d2c80a14d336eec0469
     }
 
     return address;
@@ -107,4 +111,46 @@ void PageTable::print()
         std::string currframe = currkey.substr(index+1, currkey.size());
         std::cout << std::setw(5) << currpid << " |" << std::setw(12) << currframe << " |" << std::setw(13) << _table[keys[i]] << std::endl;
     }
+}
+
+void PageTable::freePages(std::string pid) {
+    
+    std::map<std::string, int>::iterator it;
+    for (it = _table.begin(); it != _table.end();)
+    {
+        std::string d_limeter = "|";
+        std::string it_pid;
+        int pos = it->first.find(d_limeter);
+        if (pos != std::string::npos) {
+            it_pid = it->first.substr(0, pos);
+        }
+        if (it_pid == pid) {
+            _table.erase(it++);
+        }else {
+            it++;
+        }
+    }
+}
+
+void PageTable::freePage(std::string pid, std::string page) {
+    int count = 0;
+    std::map<std::string, int>::iterator it;
+    for (it = _table.begin(); it != _table.end(); it++)
+    {
+        std::string d_limeter = "|";
+        std::string it_pid;
+        std::string it_page;
+        int pos = it->first.find(d_limeter);
+        if (pos != std::string::npos) {
+            it_pid = it->first.substr(0, pos);
+            it_page = it->first.substr(pos+1);
+        }
+        if (it_page == page) {
+            count++;
+        }
+    }
+    /*if (count == 1) {
+
+    }*/
+
 }
