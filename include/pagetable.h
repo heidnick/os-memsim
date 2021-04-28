@@ -39,6 +39,8 @@ public:
     std::map<std::string, int> getPageTable();
     std::vector<std::string> getSortedKeys();
     void print();
+    void freePages(std::string pid);
+    void freePage(std::string pid, std::string page);
 };
 
 #endif // __PAGETABLE_H_

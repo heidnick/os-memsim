@@ -13,7 +13,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory);
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table);
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
-void printVarName(void *memory, int physical_address);
+void printVarName(void *memory, int physical_address, bool noComma);
 
 
 int main(int argc, char **argv)
@@ -122,16 +122,24 @@ int main(int argc, char **argv)
                                 if (_processes[i]->variables[j]->name == var_name) {
                                     found = 1;
                                     int size = _processes[i]->variables[j]->size;
-                                    bool done = 0;
+                                    bool done, noComma = 0;
                                     int k = 0;
-                                    while (k<4 || !done) {
+                                    while (k<4 && !done) {
+                                        if (k == size) {
+                                            noComma = true;
+                                        }
                                         int physical_address = page_table->getPhysicalAddress(temp_pid, _processes[i]->variables[j]->virtual_address + k);
-                                        std::cout << memory << " " << k << std::endl;
-                                        printVarName(memory, physical_address);
+                                        //std::cout << memory << " " << k << std::endl;
+                                        printVarName(memory, physical_address, noComma);
                                         k++;
                                         if (k>size) {
                                             done = 1;
                                         }
+                                    }
+                                    if (!done)  {
+                                        std::cout << "... [" << size << " items]" << std::endl;
+                                    }else {
+                                        std::cout << std::endl;
                                     }
                                 }
                             }
@@ -296,7 +304,6 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
         std::cout << "error: variable not found" << std::endl;
     }else {
         if (type == Char) {
-            //std::cout << &value << " " << value << std::endl;
             memcpy(((char*)memory+physical_address), value, sizeof(std::string) * 1);
         }else if (type == Short) {
             memcpy(((char*)memory+physical_address), value, sizeof(std::string) * 2);
@@ -305,7 +312,6 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
         }else if (type == Long || type == Double){
             memcpy(((char*)memory+physical_address), value, sizeof(std::string) * 8);
         }
-        std::cout << memory << std::endl;
         void *ptr = ((char*)memory) + (physical_address);
         std::string *test = static_cast<std::string*>(ptr);
         std::cout << "test " << *test << std::endl;
@@ -313,11 +319,18 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
     }
 }
 
-void printVarName(void *memory, int physical_address) {
-        std::cout << memory << " " << physical_address << std::endl;
+void printVarName(void *memory, int physical_address, bool noComma) {
         void *ptr = ((char*)memory) + (physical_address);
         std::string *test = static_cast<std::string*>(ptr);
-        std::cout << "test " << *test << std::endl;
+        std::cout << "test " << *test << " " << ptr << std::endl;
+        /*void *ptr = ((char*)memory) + (physical_address);
+        if (noComma) {
+            std::cout << *reinterpret_cast<std::string*>(ptr);
+
+        }else {
+            std::string &strVal = *(std::string *)ptr;
+            std::cout << strVal << ", ";
+        }*/
 }
 
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table)
@@ -325,7 +338,27 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
     // TODO: implement this!
     //   - remove entry from MMU
     //   - free page if this variable was the only one on a given page
-}
+    int v_add;
+    bool found = 0;
+    Process *proc = mmu->getProcess(pid);
+    for (int j=0; j<proc->variables.size(); j++) {
+        if (proc->variables[j]->name == var_name) {
+            found = 1;
+            v_add = proc->variables[j]->virtual_address;
+        }
+    }
+    int page_number = 0;
+    int page_offset = 0;
+    mmu->deleteVariable(pid, var_name);
+    if (found) {
+        page_offset = v_add % page_table->getPageSize();
+        page_number = (v_add - page_offset) / page_table->getPageSize();
+        std::string pid_string = std::to_string(pid);
+        std::string page_string = std::to_string(page_number);
+        page_table->freePage(pid_string,page_string);
+    }
+
+}  
 
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
 {
@@ -333,5 +366,6 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
     //   - remove process from MMU
     //   - free all pages associated with given process
     mmu->deleteProcess(pid);
-    
+    std::string pid_string = std::to_string(pid);
+    page_table->freePages(pid_string);
 }

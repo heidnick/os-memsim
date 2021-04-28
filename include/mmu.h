@@ -39,6 +39,7 @@ public:
     std::vector<Process*> getProcesses();
     void sortVariables(Process *proc);
     void deleteProcess(uint32_t pid);
+    void deleteVariable(uint32_t pid, std::string var_name);
 };
 
 
