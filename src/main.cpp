@@ -76,7 +76,14 @@ int main(int argc, char **argv)
             }
             allocateVariable(stoi(cmd_line[1]), cmd_line[2], type, stoi(cmd_line[4]), mmu, page_table, false);
         }else if (cmd_line[0] == "set") {
-            setVariable(stoi(cmd_line[1]), cmd_line[2], stoi(cmd_line[3]), &cmd_line, mmu, page_table, memory);
+            int offset = stoi(cmd_line[3]);
+            int count = 0;
+            //std::cout << cmd_line.size() << std::endl;
+            for (int i = 4; i < cmd_line.size(); i++) {
+                //int offset = stoi(cmd_line[3]) + i - 4;
+                setVariable(stoi(cmd_line[1]), cmd_line[2], (uint32_t)(offset + count), &cmd_line[i], mmu, page_table, memory);
+                count++;
+            }
         }else if (cmd_line[0] == "free") {
             freeVariable(stoi(cmd_line[1]), cmd_line[2], mmu, page_table);  
         }else if (cmd_line[0] == "terminate") {
@@ -88,6 +95,28 @@ int main(int argc, char **argv)
             }
             else if(cmd_line[1] == "mmu") {
                 mmu->print();
+            }else if (cmd_line[1] == "processes") {
+                std::vector<Process*> _processes = mmu->getProcesses();
+                for (int i=0; i<_processes.size(); i++) {
+                    std::cout << _processes[i]->pid << std::endl;
+                }
+            }else {
+                std::string d_limeter = ":";
+                size_t pos = 0;
+                int temp_pid;
+                std::string var_name;
+                pos = cmd_line[1].find(delimeter);
+                if (pos != std::string::npos) {
+                    temp_pid = stoi(cmd_line[1].substr(0, pos));
+                    var_name = cmd_line[1].substr(pos+1);
+                
+                    //now we have the pid, just print the variable
+
+
+                }else {
+                    std::cout << "error: command not recognized" << std::endl;
+                }
+                
             }
         }else {
             std::cout << "Error: Command: " << cmd_line[0] << " invalid." << std::endl;
@@ -228,18 +257,27 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
     bool found = 0;
     int physical_address;
     int size = 0;
+    DataType type;
     
     for (int i=0; i<proc->variables.size(); i++) {
         if (var_name == proc->variables[i]->name) {
             physical_address = page_table->getPhysicalAddress(pid, proc->variables[i]->virtual_address + offset);
-            //size = 
             found = 1;
+            type = proc->variables[i]->type;
         }
     }
     if (!found) {
-        std::cout << "error: variable not found";
+        std::cout << "error: variable not found" << std::endl;
     }else {
-        //memcpy(((void*)(memory)) + offset* , new_value, a->elm_size);
+        if (type == Char) {
+            memcpy(((char*)memory+physical_address), &value, 1);
+        }else if (type == Short) {
+            memcpy(((char*)memory+physical_address), &value, 2);
+        }else if (type == Int || type == Float) {
+            memcpy(((char*)memory+physical_address), &value, 4);
+        }else if (type == Long || type == Double){
+            memcpy(((char*)memory+physical_address), &value, 8);
+        }
     }
 }
 
@@ -255,4 +293,6 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
     // TODO: implement this!
     //   - remove process from MMU
     //   - free all pages associated with given process
+    mmu->deleteProcess(pid);
+    
 }

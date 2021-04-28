@@ -1,4 +1,5 @@
 #include "pagetable.h"
+#include <iomanip>
 
 PageTable::PageTable(int page_size)
 {
@@ -62,16 +63,14 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
     page_offset = virtual_address % _page_size; 
     page_number = (virtual_address - page_offset) / _page_size;
 
-
     // Combination of pid and page number act as the key to look up frame number
     std::string entry = std::to_string(pid) + "|" + std::to_string(page_number);
-    
     // If entry exists, look up frame number and convert virtual to physical address
     int address = -1;
     if (_table.count(entry) > 0)
     {
         // TODO: implement this!
-        address = entry.at(page_number) + page_offset;
+        address = _table.at(entry) + page_offset;
     }
 
     return address;
@@ -106,7 +105,6 @@ void PageTable::print()
         std::size_t index = currkey.find("|");
         std::string currpid = currkey.substr(0, index);
         std::string currframe = currkey.substr(index+1, currkey.size());
-        std::cout << currpid << " |       " << currframe << " |       " << _table[keys[i]] << std::endl;
-        //printf("%.14s | %.14s | %.13s", currpid, currframe, _table[keys[i]]);
+        std::cout << std::setw(5) << currpid << " |" << std::setw(12) << currframe << " |" << std::setw(13) << _table[keys[i]] << std::endl;
     }
 }

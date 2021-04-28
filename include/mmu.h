@@ -36,7 +36,9 @@ public:
     void deleteFreeSpace(uint32_t pid, std::string var_name, uint32_t address);
     void print();
     Process* getProcess(uint32_t pid);
+    std::vector<Process*> getProcesses();
     void sortVariables(Process *proc);
+    void deleteProcess(uint32_t pid);
 };
 
 

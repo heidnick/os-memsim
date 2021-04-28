@@ -96,7 +96,11 @@ void Mmu::print()
         for (j = 0; j < _processes[i]->variables.size(); j++)
         {
             if (_processes[i]->variables[j]->type != FreeSpace) {
-                std::cout << _processes[i]->pid << " |  " << _processes[i]->variables[j]->name << " | " << _processes[i]->variables[j]->virtual_address << " |  " << _processes[i]->variables[j]->size<< std::endl;
+                
+                std::cout << std::setw(5) << _processes[i]->pid << " | " << std::left << std::setw(13) << _processes[i]->variables[j]->name << " |";
+                std::cout << "   0x";
+                std::cout << std::right << std::setfill('0') << std::setw(8) << std::uppercase << std::hex << _processes[i]->variables[j]->virtual_address << " |" << std::dec;
+                std::cout << std::setfill(' ') << std::setw(11) << _processes[i]->variables[j]->size<< std::endl;
             }
         }
     }
@@ -114,3 +118,17 @@ Process* Mmu::getProcess(uint32_t pid) {
     return NULL;
     //return _processes[];
 }
+
+std::vector<Process*> Mmu::getProcesses() {
+    return _processes;
+}
+
+void Mmu::deleteProcess(uint32_t pid) {
+    for (int i=0; i<_processes.size(); i++) {
+        if (_processes[i]->pid == pid) {
+            _processes.erase(_processes.begin() + i);
+        }
+    }
+}
+
+
