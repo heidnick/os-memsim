@@ -70,11 +70,7 @@ int PageTable::getPhysicalAddress(uint32_t pid, uint32_t virtual_address)
     if (_table.count(entry) > 0)
     {
         // TODO: implement this!
-<<<<<<< HEAD
-        address = _table.at(entry)*_page_size + page_offset;
-=======
         address = _table.at(entry) * _page_size + page_offset;
->>>>>>> 2750e9c922061c1e33633d2c80a14d336eec0469
     }
 
     return address;
