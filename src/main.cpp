@@ -13,11 +13,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory);
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table);
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
-<<<<<<< HEAD
 void printVarName(void *memory, int physical_address, DataType type);
-=======
-void printVarName(void *memory, int physical_address, bool noComma);
->>>>>>> 2750e9c922061c1e33633d2c80a14d336eec0469
 
 
 int main(int argc, char **argv)
@@ -139,18 +135,9 @@ int main(int argc, char **argv)
                                     bool done, noComma = 0;
                                     int k = 0;
                                     while (k<4 && !done) {
-<<<<<<< HEAD
                                         int physical_address = page_table->getPhysicalAddress(temp_pid, _processes[i]->variables[j]->virtual_address + k);
                                         //std::cout << memory << " " << k << std::endl;
                                         printVarName(memory, physical_address, type);
-=======
-                                        if (k == size) {
-                                            noComma = true;
-                                        }
-                                        int physical_address = page_table->getPhysicalAddress(temp_pid, _processes[i]->variables[j]->virtual_address + k);
-                                        //std::cout << memory << " " << k << std::endl;
-                                        printVarName(memory, physical_address, noComma);
->>>>>>> 2750e9c922061c1e33633d2c80a14d336eec0469
                                         k++;
                                         if (k>size) {
                                             done = 1;
@@ -324,7 +311,6 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
     if (!found) {
         std::cout << "error: variable not found" << std::endl;
     }else {
-<<<<<<< HEAD
         if(type == Char)
         {
             memcpy(((char*)memory)+physical_address, value, sizeof(value));
@@ -341,54 +327,25 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
         //std::cout << "size: " << sizeof(value) << " type: " << type << " value: " << (int*)value << std::endl;
         //std::cout << ((float*)memory)[physical_address] << std::endl;
         //std::cout << ((char*)memory)[physical_address] << std::endl;
-=======
-        if (type == Char) {
-            memcpy(((char*)memory+physical_address), value, sizeof(std::string) * 1);
-        }else if (type == Short) {
-            memcpy(((char*)memory+physical_address), value, sizeof(std::string) * 2);
-        }else if (type == Int || type == Float) {
-            memcpy(((char*)memory+physical_address), value, sizeof(std::string) * 4);
-        }else if (type == Long || type == Double){
-            memcpy(((char*)memory+physical_address), value, sizeof(std::string) * 8);
-        }
-        void *ptr = ((char*)memory) + (physical_address);
-        std::string *test = static_cast<std::string*>(ptr);
-        std::cout << "test " << *test << std::endl;
->>>>>>> 2750e9c922061c1e33633d2c80a14d336eec0469
 
     }
 }
 
-<<<<<<< HEAD
 void printVarName(void *memory, int physical_address, DataType type) {
         //std::cout << "physical address: " << physical_address << std::endl;
         if(type == Char){
-            std::cout << ((char*)memory)[physical_address] << std::endl;
+            std::cout << ((char*)memory)[physical_address] << ", ";
         }
         else if(type == Float){
-            std::cout << ((float*)memory)[physical_address] << std::endl;
+            std::cout << ((float*)memory)[physical_address] << ", ";
         }
         else if(type == Int){
-            std::cout << ((int*)memory)[physical_address] << std::endl;
+            std::cout << ((int*)memory)[physical_address] << ", ";
         }
         //std::cout << *static_cast<std::string*>(ptr) << std::endl;
         //printf("%s\n", (char*)static_cast<std::string*>(ptr));
         //std::string *test = static_cast<std::string*>(ptr);
         //std::cout << "test " << *test << std::endl;
-=======
-void printVarName(void *memory, int physical_address, bool noComma) {
-        void *ptr = ((char*)memory) + (physical_address);
-        std::string *test = static_cast<std::string*>(ptr);
-        std::cout << "test " << *test << " " << ptr << std::endl;
-        /*void *ptr = ((char*)memory) + (physical_address);
-        if (noComma) {
-            std::cout << *reinterpret_cast<std::string*>(ptr);
-
-        }else {
-            std::string &strVal = *(std::string *)ptr;
-            std::cout << strVal << ", ";
-        }*/
->>>>>>> 2750e9c922061c1e33633d2c80a14d336eec0469
 }
 
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table)
