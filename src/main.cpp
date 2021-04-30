@@ -15,6 +15,7 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
 void printVarName(void *memory, int physical_address, DataType type);
 
+std::vector<std::vector<std::string>> var_name_pages(67108864/1024);
 
 int main(int argc, char **argv)
 {
@@ -285,13 +286,16 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
 
                 if (current_vadd == 0) {
                     for (int j = starting_page; j<ending_page + 1; j++) {
+                        var_name_pages[j].push_back(var_name);
                         page_table->addEntry(pid, j);
                     }
                 }else {
                     if (current_vadd % page_table->getPageSize() != 0) {
+                        var_name_pages[starting_page].push_back(var_name);
                         starting_page++;
                     }
                     for (int j = starting_page; j<ending_page + 1; j++) {
+                        var_name_pages[j].push_back(var_name);
                         page_table->addEntry(pid, j);
                     }
                 }
@@ -403,25 +407,34 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
     // TODO: implement this!
     //   - remove entry from MMU
     //   - free page if this variable was the only one on a given page
-    int v_add;
+    
+    int v_add,size;
     bool found = 0;
     Process *proc = mmu->getProcess(pid);
     for (int j=0; j<proc->variables.size(); j++) {
         if (proc->variables[j]->name == var_name) {
-            found = 1;
             v_add = proc->variables[j]->virtual_address;
+            size = proc->variables[j]->size;
+            found = 1;
         }
     }
+    
+    std::string pid_string = std::to_string(pid);
     int page_number = 0;
     int page_offset = 0;
-    mmu->deleteVariable(pid, var_name);
     if (found) {
         page_offset = v_add % page_table->getPageSize();
         page_number = (v_add - page_offset) / page_table->getPageSize();
-        std::string pid_string = std::to_string(pid);
-        std::string page_string = std::to_string(page_number);
-        page_table->freePage(pid_string,page_string);
+        int page_end = (v_add + size) / page_table->getPageSize();
+
+        for (int i=page_number; i<(page_end + 1); i++){
+            if (var_name_pages[i].size() == 1) {
+                page_table->freePage(pid_string, std::to_string(i));
+            }
+        }
     }
+    mmu->deleteVariable(pid, var_name);
+
 
 }  
 

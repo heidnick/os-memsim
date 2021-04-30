@@ -129,24 +129,21 @@ void PageTable::freePages(std::string pid) {
 }
 
 void PageTable::freePage(std::string pid, std::string page) {
-    int count = 0;
     std::map<std::string, int>::iterator it;
-    for (it = _table.begin(); it != _table.end(); it++)
+    for (it = _table.begin(); it != _table.end(); it)
     {
         std::string d_limeter = "|";
         std::string it_pid;
         std::string it_page;
         int pos = it->first.find(d_limeter);
         if (pos != std::string::npos) {
-            it_pid = it->first.substr(0, pos);
             it_page = it->first.substr(pos+1);
         }
         if (it_page == page) {
-            count++;
+            _table.erase(it++);            
+        }else {
+            it++;
         }
     }
-    /*if (count == 1) {
-
-    }*/
 
 }
