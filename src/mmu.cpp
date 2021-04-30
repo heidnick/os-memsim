@@ -116,7 +116,6 @@ Process* Mmu::getProcess(uint32_t pid) {
         }
     }
     return NULL;
-    //return _processes[];
 }
 
 std::vector<Process*> Mmu::getProcesses() {
@@ -124,10 +123,15 @@ std::vector<Process*> Mmu::getProcesses() {
 }
 
 void Mmu::deleteProcess(uint32_t pid) {
+    bool found = 0;
     for (int i=0; i<_processes.size(); i++) {
         if (_processes[i]->pid == pid) {
             _processes.erase(_processes.begin() + i);
+            found = 1;
         }
+    }
+    if (!found) {
+        std::cout << "error: process not found" << std::endl;
     }
 }
 

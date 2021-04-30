@@ -16,6 +16,7 @@ void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table);
 void printVarName(void *memory, int physical_address, DataType type);
 
 std::vector<std::vector<std::string>> var_name_pages(67108864/1024);
+int total_mem = 0;
 
 int main(int argc, char **argv)
 {
@@ -237,12 +238,11 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
 
     // TODO: implement this!
     //   - find first free space within a page already allocated to this process that is large enough to fit the new variable
+    //   - if no hole is large enough, allocate new page(s)
+    //   - insert variable into MMU
+    //   - print virtual memory address
     Process *proc = mmu->getProcess(pid);
-    /*::map<std::string, int> p_table = page_table->getPageTable();
-    for (int i=0; i<p_table.size(); i++) {
-        if (p_table[i])
-    }*/
-    //std::vector<std::string> keys = page_table->sortedKeys();
+    bool var_exists = 0;
     int size = num_elements;
     int type_size = 1;
     if (type == Short) {
@@ -253,71 +253,85 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         type_size = 8;
     }
     size = size * type_size;
+    total_mem + size;
 
-    int variable_size = proc->variables.size();
-    for (int i=0; i<variable_size; i++) {
-        if (proc->variables[i]->type == FreeSpace) {
-            int current_vadd = proc->variables[i]->virtual_address;
-            int offset = (type_size -  (current_vadd % type_size)) % type_size;
-            bool added_offset = false;
-            //if there would be cross page conflicts
-            if( size + (current_vadd % page_table->getPageSize()) > page_table->getPageSize() && offset != 0)
-            {
-                //increase the size, then check if the free space can still handle the offset
-                size = size + offset;
-                if(proc->variables[i]->size >= size)
-                {
-                    mmu->addVariableToProcess(pid, "<FREE_SPACE>", FreeSpace, offset, current_vadd);
-                    current_vadd = current_vadd + offset;
-                    mmu->modifyVariableToProcess(proc->variables[i+1], proc->variables[i+1]->size - offset, current_vadd);          
-                    i = i + 1;
-                    added_offset = true;
-                    
-                }
-            }
-            if (proc->variables[i]->size >= size) {
-                //size is dependent on type
-                if(added_offset){
-                    size = size - offset;
-                }
-                int starting_page = (int)current_vadd/page_table->getPageSize();
-                int ending_page = (int)(current_vadd + size - 1) / page_table->getPageSize();
-                mmu->addVariableToProcess(pid, var_name, type, size, current_vadd);
-
-                if (current_vadd == 0) {
-                    for (int j = starting_page; j<ending_page + 1; j++) {
-                        var_name_pages[j].push_back(var_name);
-                        page_table->addEntry(pid, j);
-                    }
-                }else {
-                    if (current_vadd % page_table->getPageSize() != 0) {
-                        var_name_pages[starting_page].push_back(var_name);
-                        starting_page++;
-                    }
-                    for (int j = starting_page; j<ending_page + 1; j++) {
-                        var_name_pages[j].push_back(var_name);
-                        page_table->addEntry(pid, j);
-                    }
-                }
-
-                int new_size = proc->variables[i+1]->size - size;
-                if (new_size == 0) {
-                    mmu->deleteFreeSpace(pid, proc->variables[i+1]->name, current_vadd);
-                }else {
-                    mmu->modifyVariableToProcess( proc->variables[i+1], new_size, current_vadd + size);
-                }
-                if (!createCalled) {
-                    std::cout << current_vadd << std::endl;
-                }
-            }
-            //in case the free space wasnt enough to fit the variable when additional offset was needed, reset to original size
-            size = size - offset;
+    if ((proc == NULL) == false) {
+        for (int i=0; i< proc->variables.size(); i++) {
+            if (var_name == proc->variables[i]->name) {
+                var_exists = 1;
+            }  
         }
     }
     
-    //   - if no hole is large enough, allocate new page(s)
-    //   - insert variable into MMU
-    //   - print virtual memory address
+    
+    if (total_mem > 67108864) {
+        std::cout << "error: maximum memory exceeded. cannot allocate memory" << std::endl;
+    }else if ((proc == NULL) == true) {
+        std::cout << "error: process not found" << std::endl;
+    }else if (var_exists){
+        std::cout << "error: variable already exists" << std::endl;
+    }else {
+        int variable_size = proc->variables.size();
+        for (int i=0; i<variable_size; i++) {
+            if (proc->variables[i]->type == FreeSpace) {
+                int current_vadd = proc->variables[i]->virtual_address;
+                int offset = (type_size -  (current_vadd % type_size)) % type_size;
+                bool added_offset = false;
+                //if there would be cross page conflicts
+                if( size + (current_vadd % page_table->getPageSize()) > page_table->getPageSize() && offset != 0)
+                {
+                    //increase the size, then check if the free space can still handle the offset
+                    size = size + offset;
+                    if(proc->variables[i]->size >= size)
+                    {
+                        mmu->addVariableToProcess(pid, "<FREE_SPACE>", FreeSpace, offset, current_vadd);
+                        current_vadd = current_vadd + offset;
+                        mmu->modifyVariableToProcess(proc->variables[i+1], proc->variables[i+1]->size - offset, current_vadd);          
+                        i = i + 1;
+                        added_offset = true;
+                        
+                    }
+                }
+                if (proc->variables[i]->size >= size) {
+                    //size is dependent on type
+                    if(added_offset){
+                        size = size - offset;
+                    }
+                    int starting_page = (int)current_vadd/page_table->getPageSize();
+                    int ending_page = (int)(current_vadd + size - 1) / page_table->getPageSize();
+                    mmu->addVariableToProcess(pid, var_name, type, size, current_vadd);
+
+                    if (current_vadd == 0) {
+                        for (int j = starting_page; j<ending_page + 1; j++) {
+                            var_name_pages[j].push_back(var_name);
+                            page_table->addEntry(pid, j);
+                        }
+                    }else {
+                        if (current_vadd % page_table->getPageSize() != 0) {
+                            var_name_pages[starting_page].push_back(var_name);
+                            starting_page++;
+                        }
+                        for (int j = starting_page; j<ending_page + 1; j++) {
+                            var_name_pages[j].push_back(var_name);
+                            page_table->addEntry(pid, j);
+                        }
+                    }
+
+                    int new_size = proc->variables[i+1]->size - size;
+                    if (new_size == 0) {
+                        mmu->deleteFreeSpace(pid, proc->variables[i+1]->name, current_vadd);
+                    }else {
+                        mmu->modifyVariableToProcess( proc->variables[i+1], new_size, current_vadd + size);
+                    }
+                    /*if (!createCalled) {
+                        std::cout << current_vadd << std::endl;
+                    }*/
+                }
+                //in case the free space wasnt enough to fit the variable when additional offset was needed, reset to original size
+                size = size - offset;
+            }
+        }
+    }
 }
 
 void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *value, Mmu *mmu, PageTable *page_table, void *memory)
@@ -332,47 +346,45 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
     int physical_address;
     int size = 0;
     DataType type;
-    
-    for (int i=0; i<proc->variables.size(); i++) {
-        if (var_name == proc->variables[i]->name) {
-            type = proc->variables[i]->type;
-            physical_address = page_table->getPhysicalAddress(pid, proc->variables[i]->virtual_address + (offset * sizeof(type)));
-            found = 1;
-            
-        }
-    }
-    if (!found) {
-        std::cout << "error: variable not found" << std::endl;
+    if ((proc == NULL) == true) {
+        std::cout << "error: process not found" << std::endl;
     }else {
-        if(type == Char)
-        {
-            memcpy(((char*)memory)+physical_address, value, 1);
+        for (int i=0; i<proc->variables.size(); i++) {
+            if (var_name == proc->variables[i]->name) {
+                type = proc->variables[i]->type;
+                physical_address = page_table->getPhysicalAddress(pid, proc->variables[i]->virtual_address + (offset * sizeof(type)));
+                found = 1;
+                
+            }
         }
-        if(type == Float)
-        {
-            memcpy(((float*)memory)+physical_address, value, 4);
+        if (!found) {
+            std::cout << "error: variable not found" << std::endl;
+        }else {
+            if(type == Char)
+            {
+                memcpy(((char*)memory)+physical_address, value, 1);
+            }
+            if(type == Float)
+            {
+                memcpy(((float*)memory)+physical_address, value, 4);
+            }
+            if(type == Int)
+            {
+                memcpy(((int*)memory)+physical_address, value, 4);
+            }
+            if(type == Long)
+            {
+                memcpy(((long*)memory)+physical_address, value, 8);
+            }
+            if(type == Short)
+            {
+                memcpy(((short*)memory)+physical_address, value, 2);
+            }
+            if(type == Double)
+            {
+                memcpy(((double*)memory)+physical_address, value, 8);
+            }
         }
-        if(type == Int)
-        {
-            memcpy(((int*)memory)+physical_address, value, 4);
-        }
-        if(type == Long)
-        {
-            memcpy(((long*)memory)+physical_address, value, 8);
-        }
-        if(type == Short)
-        {
-            memcpy(((short*)memory)+physical_address, value, 2);
-        }
-        if(type == Double)
-        {
-            memcpy(((double*)memory)+physical_address, value, 8);
-        }
-        //printf("%p\n", value);
-        //std::cout << "size: " << sizeof(value) << " type: " << type << " value: " << (int*)value << std::endl;
-        //std::cout << ((float*)memory)[physical_address] << std::endl;
-        //std::cout << ((char*)memory)[physical_address] << std::endl;
-
     }
 }
 
@@ -404,6 +416,8 @@ void printVarName(void *memory, int physical_address, DataType type) {
 
 void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_table)
 {
+    //error check prints are done inside of delete variable
+
     // TODO: implement this!
     //   - remove entry from MMU
     //   - free page if this variable was the only one on a given page
@@ -411,35 +425,40 @@ void freeVariable(uint32_t pid, std::string var_name, Mmu *mmu, PageTable *page_
     int v_add,size;
     bool found = 0;
     Process *proc = mmu->getProcess(pid);
-    for (int j=0; j<proc->variables.size(); j++) {
-        if (proc->variables[j]->name == var_name) {
-            v_add = proc->variables[j]->virtual_address;
-            size = proc->variables[j]->size;
-            found = 1;
-        }
-    }
-    
-    std::string pid_string = std::to_string(pid);
-    int page_number = 0;
-    int page_offset = 0;
-    if (found) {
-        page_offset = v_add % page_table->getPageSize();
-        page_number = (v_add - page_offset) / page_table->getPageSize();
-        int page_end = (v_add + size) / page_table->getPageSize();
-
-        for (int i=page_number; i<(page_end + 1); i++){
-            if (var_name_pages[i].size() == 1) {
-                page_table->freePage(pid_string, std::to_string(i));
+    if ((proc == NULL) == false) {
+        for (int j=0; j<proc->variables.size(); j++) {
+            if (proc->variables[j]->name == var_name) {
+                v_add = proc->variables[j]->virtual_address;
+                size = proc->variables[j]->size;
+                found = 1;
             }
         }
+        
+        std::string pid_string = std::to_string(pid);
+        int page_number = 0;
+        int page_offset = 0;
+        if (found) {
+            page_offset = v_add % page_table->getPageSize();
+            page_number = (v_add - page_offset) / page_table->getPageSize();
+            int page_end = (v_add + size) / page_table->getPageSize();
+
+            for (int i=page_number; i<(page_end + 1); i++){
+                if (var_name_pages[i].size() == 1) {
+                    page_table->freePage(pid_string, std::to_string(i));
+                }
+            }
+        }
+        mmu->deleteVariable(pid, var_name);
     }
-    mmu->deleteVariable(pid, var_name);
+    
 
 
 }  
 
 void terminateProcess(uint32_t pid, Mmu *mmu, PageTable *page_table)
 {
+    //error checking for this function done inside of delete process
+    
     // TODO: implement this!
     //   - remove process from MMU
     //   - free all pages associated with given process
