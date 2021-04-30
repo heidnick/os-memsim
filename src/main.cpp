@@ -94,6 +94,18 @@ int main(int argc, char **argv)
                     int value = stoi(cmd_line[i]);
                     setVariable(stoi(cmd_line[1]), cmd_line[2], (uint32_t)(offset + count), &value, mmu, page_table, memory);
                 }
+                else if(type == Double){
+                    double value = stod(cmd_line[i]);
+                    setVariable(stoi(cmd_line[1]), cmd_line[2], (uint32_t)(offset + count), &value, mmu, page_table, memory);
+                }
+                else if(type == Short){
+                    short value = stoi(cmd_line[i]);
+                    setVariable(stoi(cmd_line[1]), cmd_line[2], (uint32_t)(offset + count), &value, mmu, page_table, memory);
+                }
+                else if(type == Long){
+                    long value = stol(cmd_line[i]);
+                    setVariable(stoi(cmd_line[1]), cmd_line[2], (uint32_t)(offset + count), &value, mmu, page_table, memory);
+                }
                 count++;
             }
         }else if (cmd_line[0] == "free") {
@@ -131,16 +143,29 @@ int main(int argc, char **argv)
                             for (int j=0; j<_processes[i]->variables.size(); j++) {
                                 if (_processes[i]->variables[j]->name == var_name) {
                                     found = 1;
-                                    int size = _processes[i]->variables[j]->size;
+                                    type = _processes[i]->variables[j]->type;
+                                    int type_size = 1;
+                                    if (type == Short) {
+                                        type_size = 2;
+                                    }else if (type == Int || type == Float) {
+                                        type_size = 4;
+                                    }else if (type == Long || type == Double) {
+                                        type_size = 8;
+                                    }
+                                    int size = _processes[i]->variables[j]->size/type_size;
                                     bool done, noComma = 0;
                                     int k = 0;
                                     while (k<4 && !done) {
                                         int physical_address = page_table->getPhysicalAddress(temp_pid, _processes[i]->variables[j]->virtual_address + k);
                                         //std::cout << memory << " " << k << std::endl;
                                         printVarName(memory, physical_address, type);
-                                        k++;
-                                        if (k>size) {
+                                        k = k + 1;
+                                        if (k>=size) {
                                             done = 1;
+                                        }
+                                        else
+                                        {
+                                            std::cout << ", ";
                                         }
                                     }
                                     if (!done)  {
@@ -233,6 +258,7 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
         if (proc->variables[i]->type == FreeSpace) {
             int current_vadd = proc->variables[i]->virtual_address;
             int offset = (type_size -  (current_vadd % type_size)) % type_size;
+            bool added_offset = false;
             //if there would be cross page conflicts
             if( size + (current_vadd % page_table->getPageSize()) > page_table->getPageSize() && offset != 0)
             {
@@ -244,12 +270,15 @@ void allocateVariable(uint32_t pid, std::string var_name, DataType type, uint32_
                     current_vadd = current_vadd + offset;
                     mmu->modifyVariableToProcess(proc->variables[i+1], proc->variables[i+1]->size - offset, current_vadd);          
                     i = i + 1;
+                    added_offset = true;
                     
                 }
             }
             if (proc->variables[i]->size >= size) {
                 //size is dependent on type
-                size = size - offset;
+                if(added_offset){
+                    size = size - offset;
+                }
                 int starting_page = (int)current_vadd/page_table->getPageSize();
                 int ending_page = (int)(current_vadd + size - 1) / page_table->getPageSize();
                 mmu->addVariableToProcess(pid, var_name, type, size, current_vadd);
@@ -313,15 +342,27 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
     }else {
         if(type == Char)
         {
-            memcpy(((char*)memory)+physical_address, value, sizeof(value));
+            memcpy(((char*)memory)+physical_address, value, 1);
         }
         if(type == Float)
         {
-            memcpy(((float*)memory)+physical_address, value, sizeof(value));
+            memcpy(((float*)memory)+physical_address, value, 4);
         }
         if(type == Int)
         {
-            memcpy(((int*)memory)+physical_address, value, sizeof(value));
+            memcpy(((int*)memory)+physical_address, value, 4);
+        }
+        if(type == Long)
+        {
+            memcpy(((long*)memory)+physical_address, value, 8);
+        }
+        if(type == Short)
+        {
+            memcpy(((short*)memory)+physical_address, value, 2);
+        }
+        if(type == Double)
+        {
+            memcpy(((double*)memory)+physical_address, value, 8);
         }
         //printf("%p\n", value);
         //std::cout << "size: " << sizeof(value) << " type: " << type << " value: " << (int*)value << std::endl;
@@ -334,13 +375,22 @@ void setVariable(uint32_t pid, std::string var_name, uint32_t offset, void *valu
 void printVarName(void *memory, int physical_address, DataType type) {
         //std::cout << "physical address: " << physical_address << std::endl;
         if(type == Char){
-            std::cout << ((char*)memory)[physical_address] << ", ";
+            std::cout << ((char*)memory)[physical_address];
         }
         else if(type == Float){
-            std::cout << ((float*)memory)[physical_address] << ", ";
+            std::cout << ((float*)memory)[physical_address];
         }
         else if(type == Int){
-            std::cout << ((int*)memory)[physical_address] << ", ";
+            std::cout << ((int*)memory)[physical_address];
+        }
+        else if(type == Short){
+            std::cout << ((short*)memory)[physical_address];
+        }
+        else if(type == Long){
+            std::cout << ((long*)memory)[physical_address];
+        }
+        else if(type == Double){
+            std::cout << ((double*)memory)[physical_address];
         }
         //std::cout << *static_cast<std::string*>(ptr) << std::endl;
         //printf("%s\n", (char*)static_cast<std::string*>(ptr));
